@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e8c97a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WritePlanner">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Academic Writing Planner — Ankit</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #141720;
+  --surface2: #1c2030;
+  --border: #252a3a;
+  --c1: #e8c97a;   /* gold    — Research Article */
+  --c2: #7ab8e8;   /* blue    — Review 1 */
+  --c3: #7ae8b8;   /* green   — Review 2 */
+  --c4: #e87aa8;   /* pink    — Review 3 */
+  --c5: #b07ae8;   /* purple  — Book Chapter */
+  --text: #d4d8e8;
+  --dim: #6b7290;
+  --bright: #f0f3ff;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh; min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  padding-bottom: calc(70px + var(--safe-bot));
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(232,201,122,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,201,122,0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none; z-index: 0;
+}
+
+/* NAV */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(60px + var(--safe-bot));
+  background: rgba(20,23,32,0.97);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-around;
+  padding: 8px 0; z-index: 100;
+}
+.nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: none; border: none; color: var(--dim);
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1px;
+  text-transform: uppercase; cursor: pointer; padding: 4px 10px;
+  border-radius: 10px; transition: color 0.2s; min-width: 55px;
+}
+.nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+.nav-btn.active { color: var(--c1); }
+.nav-btn.active .nav-icon { filter: drop-shadow(0 0 6px rgba(232,201,122,0.5)); }
+
+/* SCREENS */
+.screen { display: none; position: relative; z-index: 1; animation: fadeIn 0.22s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.page-pad { padding: 0 16px; padding-top: calc(var(--safe-top) + 16px); }
+
+/* COMMON */
+.eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--c1); text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; color: var(--bright); margin-bottom: 4px; }
+.section-sub { font-size: 12px; color: var(--dim); margin-bottom: 20px; }
+.divider { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin: 24px 0 16px; }
+.hidden { display: none !important; }
+
+/* HERO */
+.hero-card {
+  background: linear-gradient(135deg, var(--surface2), #0f1520);
+  border: 1px solid rgba(232,201,122,0.3); border-radius: 16px;
+  padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden;
+}
+.hero-card::before {
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(232,201,122,0.12), transparent 70%);
+  border-radius: 50%;
+}
+.hero-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--c1); margin-bottom: 4px; }
+.hero-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 900; color: var(--bright); line-height: 1.1; margin-bottom: 8px; }
+.hero-sub { font-size: 12px; color: var(--dim); line-height: 1.6; }
+
+/* STATS */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: var(--c1); }
+.stat-lbl { font-size: 10px; color: var(--dim); margin-top: 2px; line-height: 1.3; }
+
+/* TODAY */
+.today-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--c1); border-radius: 12px; padding: 16px; margin-bottom: 16px;
+}
+.today-tag { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--c1); text-transform: uppercase; margin-bottom: 6px; }
+.today-focus { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--bright); margin-bottom: 6px; }
+.today-desc { font-size: 12px; color: var(--dim); line-height: 1.6; }
+
+/* PAPER CARDS */
+.paper-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px; margin-bottom: 12px;
+  position: relative; overflow: hidden;
+}
+.paper-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.paper-card.p1::before { background: var(--c1); }
+.paper-card.p2::before { background: var(--c2); }
+.paper-card.p3::before { background: var(--c3); }
+.paper-card.p4::before { background: var(--c4); }
+.paper-card.p5::before { background: var(--c5); }
+
+.paper-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.paper-card.p1 .paper-tag { color: var(--c1); }
+.paper-card.p2 .paper-tag { color: var(--c2); }
+.paper-card.p3 .paper-tag { color: var(--c3); }
+.paper-card.p4 .paper-tag { color: var(--c4); }
+.paper-card.p5 .paper-tag { color: var(--c5); }
+
+.paper-title { font-size: 13px; color: var(--bright); font-weight: 600; margin-bottom: 6px; line-height: 1.4; }
+.paper-journal { font-size: 10px; color: var(--dim); margin-bottom: 10px; font-style: italic; }
+
+.prog-row { display: flex; align-items: center; gap: 10px; }
+.prog-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.paper-card.p1 .prog-fill { background: var(--c1); }
+.paper-card.p2 .prog-fill { background: var(--c2); }
+.paper-card.p3 .prog-fill { background: var(--c3); }
+.paper-card.p4 .prog-fill { background: var(--c4); }
+.paper-card.p5 .prog-fill { background: var(--c5); }
+.prog-pct { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dim); min-width: 36px; text-align: right; }
+.prog-wc { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--dim); text-align: right; margin-top: 4px; }
+
+.wc-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.wc-input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--bright);
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  padding: 8px 12px; outline: none;
+}
+.wc-input:focus { border-color: var(--c1); }
+.wc-btn {
+  background: var(--c1); color: #0d0f14; border: none; border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  padding: 8px 14px; cursor: pointer; white-space: nowrap;
+}
+
+/* SUBMISSIONS GRID */
+.sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+.sub-toggle {
+  background: var(--surface); border: 1px solid var(--border); color: var(--dim);
+  border-radius: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+  letter-spacing: 1px; padding: 12px 8px; cursor: pointer;
+  transition: all 0.2s; text-transform: uppercase; line-height: 1.4; text-align: center;
+}
+.sub-toggle.submitted { background: rgba(122,232,184,0.08); border-color: var(--c3); color: var(--c3); }
+
+/* INSTALL BANNER */
+.install-banner {
+  background: linear-gradient(135deg, rgba(232,201,122,0.1), rgba(122,184,232,0.06));
+  border: 1px solid rgba(232,201,122,0.25); border-radius: 14px;
+  padding: 16px; margin-bottom: 20px; display: none;
+}
+.install-banner.show { display: block; }
+.install-head { font-size: 13px; color: var(--bright); font-weight: 600; margin-bottom: 4px; }
+.install-sub { font-size: 11px; color: var(--dim); margin-bottom: 12px; line-height: 1.5; }
+.install-btn {
+  background: var(--c1); color: #0d0f14; border: none; border-radius: 8px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;
+  padding: 10px 20px; cursor: pointer; width: 100%; letter-spacing: 1px;
+}
+
+/* CHECKLIST */
+.tab-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 16px; scrollbar-width: none; }
+.tab-row::-webkit-scrollbar { display: none; }
+.tab-pill {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase; padding: 7px 14px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--dim);
+  cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0;
+}
+.tab-pill.active { border-color: var(--c1); color: var(--c1); background: rgba(232,201,122,0.08); }
+
+.checklist { border-radius: 14px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); margin-bottom: 12px; }
+.cl-item {
+  display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: background 0.15s; user-select: none; -webkit-user-select: none;
+}
+.cl-item:last-child { border-bottom: none; }
+.cl-item:active { background: var(--surface2); }
+.cl-item.done { opacity: 0.4; }
+.cl-item.done .cl-text { text-decoration: line-through; }
+.cl-check {
+  width: 20px; height: 20px; flex-shrink: 0; border: 1.5px solid var(--border);
+  border-radius: 6px; margin-top: 1px; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; transition: all 0.2s;
+}
+.cl-item.done .cl-check { background: var(--c1); border-color: var(--c1); color: #000; }
+.cl-text { font-size: 13px; line-height: 1.5; flex: 1; }
+.cl-badge {
+  font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1px;
+  padding: 2px 7px; border-radius: 4px; display: inline-block; margin-top: 4px;
+}
+.b1 { background: rgba(232,201,122,0.15); color: var(--c1); }
+.b2 { background: rgba(122,184,232,0.15); color: var(--c2); }
+.b3 { background: rgba(122,232,184,0.15); color: var(--c3); }
+.b4 { background: rgba(232,122,168,0.15); color: var(--c4); }
+.b5 { background: rgba(176,122,232,0.15); color: var(--c5); }
+.ball { background: rgba(200,200,220,0.1); color: var(--dim); }
+.cl-meta { display: flex; flex-direction: column; gap: 3px; }
+
+/* PHASES */
+.phase-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; margin-bottom: 12px; position: relative;
+}
+.phase-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 4px; }
+.phase-title-txt { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--bright); margin-bottom: 4px; }
+.phase-dates { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--c1); margin-bottom: 12px; }
+.phase-tasks { list-style: none; }
+.phase-tasks li { font-size: 12px; color: var(--dim); padding: 4px 0 4px 16px; position: relative; line-height: 1.5; }
+.phase-tasks li::before { content: '→'; position: absolute; left: 0; color: var(--c1); font-size: 11px; }
+.phase-badge { position: absolute; top: 16px; right: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 500; color: rgba(232,201,122,0.07); }
+
+/* TIPS */
+.tip-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 12px; }
+.tip-icon { font-size: 22px; margin-bottom: 8px; }
+.tip-head { font-size: 13px; color: var(--bright); font-weight: 600; margin-bottom: 8px; }
+.tip-body { font-size: 12px; color: var(--dim); line-height: 1.7; }
+.tip-body strong { color: var(--text); }
+
+.rhythm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; }
+.rhythm-time { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--c1); font-weight: 500; min-width: 72px; padding-top: 1px; }
+.rhythm-label { font-size: 13px; color: var(--bright); font-weight: 600; margin-bottom: 4px; }
+.rhythm-desc { font-size: 11px; color: var(--dim); line-height: 1.6; }
+
+/* LEGEND */
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--dim); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div class="screen active page-pad" id="screen-home">
+
+  <div class="install-banner" id="install-banner">
+    <div class="install-head">📲 Install on your phone</div>
+    <div class="install-sub">Tap below → Add to Home Screen for a full offline app experience.</div>
+    <button class="install-btn" id="install-btn">ADD TO HOME SCREEN</button>
+  </div>
+
+  <div class="hero-card">
+    <div class="hero-date" id="today-date">Loading...</div>
+    <div class="hero-title">5 Papers<br>100 Days</div>
+    <div class="hero-sub">May 23 – Aug 31, 2026 · Food Science & Technology · FNU-CETVET</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num" id="days-left">100</div>
+      <div class="stat-lbl">Days Left</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="total-words">0</div>
+      <div class="stat-lbl">Words Written</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="papers-done">0/5</div>
+      <div class="stat-lbl">Submitted</div>
+    </div>
+  </div>
+
+  <div class="today-card">
+    <div class="today-tag">📍 Today's Focus</div>
+    <div class="today-focus" id="today-focus">Day 1: Lock In Your Plan</div>
+    <div class="today-desc" id="today-desc">Open all 5 documents, write outlines for each, and complete your first 300 words on the Research Article Methods section. Set up your reference manager today.</div>
+  </div>
+
+  <div class="divider">// 5 Manuscripts · Word Count Tracker</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c1)"></div>Research Article</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c2)"></div>Review 1</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c3)"></div>Review 2</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c4)"></div>Review 3</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--c5)"></div>Book Chapter</div>
+  </div>
+
+  <!-- P1: Research Article -->
+  <div class="paper-card p1">
+    <div class="paper-tag">Research Article</div>
+    <div class="paper-title">Impact of Hydrothermal Treatment on Breadfruit and Plantain Flour Properties</div>
+    <div class="paper-journal">Target: Food Chemistry · LWT Food Science & Technology</div>
+    <div class="prog-row">
+      <div class="prog-bar"><div class="prog-fill" id="prog-p1" style="width:0%"></div></div>
+      <div class="prog-pct" id="pct-p1">0%</div>
+    </div>
+    <div class="prog-wc" id="wc-display-p1">0 / 6,000 words</div>
+    <div class="wc-row">
+      <input class="wc-input" type="number" placeholder="Add words written..." id="wc-p1" min="0">
+      <button class="wc-btn" onclick="addWords('p1')">+ ADD</button>
+    </div>
+  </div>
+
+  <!-- P2: Review 1 -->
+  <div class="paper-card p2">
+    <div class="paper-tag">Review Article 1</div>
+    <div class="paper-title">Food System Transformation in South Pacific Island Nations</div>
+    <div class="paper-journal">Target: Global Food Security · Food Policy</div>
+    <div class="prog-row">
+      <div class="prog-bar"><div class="prog-fill" id="prog-p2" style="width:0%"></div></div>
+      <div class="prog-pct" id="pct-p2">0%</div>
+    </div>
+    <div class="prog-wc" id="wc-display-p2">0 / 7,000 words</div>
+    <div class="wc-row">
+      <input class="wc-input" type="number" placeholder="Add words written..." id="wc-p2" min="0">
+      <button class="wc-btn" onclick="addWords('p2')">+ ADD</button>
+    </div>
+  </div>
+
+  <!-- P3: Review 2 -->
+  <div class="paper-card p3">
+    <div class="paper-tag">Review Article 2</div>
+    <div class="paper-title">Production, Biochemical Profiling, and Application of Seaweed from South Pacific Islands</div>
+    <div class="paper-journal">Target: Algal Research · Journal of Applied Phycology</div>
+    <div class="prog-row">
+      <div class="prog-bar"><div class="prog-fill" id="prog-p3" style="width:0%"></div></div>
+      <div class="prog-pct" id="pct-p3">0%</div>
+    </div>
+    <div class="prog-wc" id="wc-display-p3">0 / 7,000 words</div>
+    <div class="wc-row">
+      <input class="wc-input" type="number" placeholder="Add words written..." id="wc-p3" min="0">
+      <button class="wc-btn" onclick="addWords('p3')">+ ADD</button>
+    </div>
+  </div>
+
+  <!-- P4: Review 3 -->
+  <div class="paper-card p4">
+    <div class="paper-tag">Review Article 3</div>
+    <div class="paper-title">Transitioning to a Circular Bioeconomy</div>
+    <div class="paper-journal">Target: Resources Conservation & Recycling · Bioresource Technology</div>
+    <div class="prog-row">
+      <div class="prog-bar"><div class="prog-fill" id="prog-p4" style="width:0%"></div></div>
+      <div class="prog-pct" id="pct-p4">0%</div>
+    </div>
+    <div class="prog-wc" id="wc-display-p4">0 / 7,000 words</div>
+    <div class="wc-row">
+      <input class="wc-input" type="number" placeholder="Add words written..." id="wc-p4" min="0">
+      <button class="wc-btn" onclick="addWords('p4')">+ ADD</button>
+    </div>
+  </div>
+
+  <!-- P5: Book Chapter -->
+  <div class="paper-card p5">
+    <div class="paper-tag">Book Chapter</div>
+    <div class="paper-title">IoT Applications in Food Supply Chain Management</div>
+    <div class="paper-journal">Target: Springer / Elsevier edited volume on Smart Food Systems</div>
+    <div class="prog-row">
+      <div class="prog-bar"><div class="prog-fill" id="prog-p5" style="width:0%"></div></div>
+      <div class="prog-pct" id="pct-p5">0%</div>
+    </div>
+    <div class="prog-wc" id="wc-display-p5">0 / 10,000 words</div>
+    <div class="wc-row">
+      <input class="wc-input" type="number" placeholder="Add words written..." id="wc-p5" min="0">
+      <button class="wc-btn" onclick="addWords('p5')">+ ADD</button>
+    </div>
+  </div>
+
+  <div class="divider">// Submission Status</div>
+  <div class="sub-grid">
+    <button class="sub-toggle" id="sub-p1" onclick="toggleSub('p1')">Res. Article ✗</button>
+    <button class="sub-toggle" id="sub-p2" onclick="toggleSub('p2')">Review 1 ✗</button>
+    <button class="sub-toggle" id="sub-p3" onclick="toggleSub('p3')">Review 2 ✗</button>
+    <button class="sub-toggle" id="sub-p4" onclick="toggleSub('p4')">Review 3 ✗</button>
+    <button class="sub-toggle" id="sub-p5" onclick="toggleSub('p5')" style="grid-column:1/-1">Book Chapter ✗</button>
+  </div>
+
+</div><!-- end home -->
+
+<!-- ══ CHECKLIST ══ -->
+<div class="screen page-pad" id="screen-checklist">
+  <div class="eyebrow">Daily Goals</div>
+  <div class="section-title">Task Lists</div>
+  <div class="section-sub">Tap items to check off. State is saved on your device.</div>
+
+  <div class="tab-row">
+    <button class="tab-pill active" onclick="showTab('weekday',this)">Weekday</button>
+    <button class="tab-pill" onclick="showTab('weekend',this)">Weekend</button>
+    <button class="tab-pill" onclick="showTab('month1',this)">Month 1</button>
+    <button class="tab-pill" onclick="showTab('month2',this)">Month 2</button>
+    <button class="tab-pill" onclick="showTab('month3',this)">Month 3</button>
+    <button class="tab-pill" onclick="showTab('submit',this)">Submit</button>
+  </div>
+
+  <!-- Weekday -->
+  <div class="checklist" id="tab-weekday">
+    <div class="cl-item" onclick="toggleItem(this,'wd1')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Write 500–600 words (deep work block — no distractions)</div><span class="cl-badge ball">Daily</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'wd2')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Read and annotate 1–2 new papers for active manuscript</div><span class="cl-badge ball">Literature</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'wd3')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Add 3+ properly formatted references to Mendeley/Zotero</div><span class="cl-badge ball">Citations</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'wd4')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Log today's word count in the app (Home screen)</div><span class="cl-badge ball">Tracking</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'wd5')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">If blocked on one paper, rotate to another for 30 min</div><span class="cl-badge ball">Strategy</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'wd6')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Evening: write 3 bullet points for tomorrow's writing session</div><span class="cl-badge ball">Evening</span></div></div>
+  </div>
+
+  <!-- Weekend -->
+  <div class="checklist hidden" id="tab-weekend">
+    <div class="cl-item" onclick="toggleItem(this,'we1')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Extended writing session: 1,000–1,500 words across manuscripts</div><span class="cl-badge ball">Weekend</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'we2')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Deep literature review: 4–6 papers with structured notes</div><span class="cl-badge ball">Literature</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'we3')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Weekly review: check all 5 word counts vs targets, adjust plan</div><span class="cl-badge ball">Review</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'we4')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Work on figures, tables, or supplementary material</div><span class="cl-badge ball">Figures</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'we5')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Review target journal guidelines for active manuscript</div><span class="cl-badge ball">Admin</span></div></div>
+  </div>
+
+  <!-- Month 1: May 23 – Jun 21 -->
+  <div class="checklist hidden" id="tab-month1">
+    <div class="cl-item" onclick="toggleItem(this,'m1a')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Finalise all 5 outlines and confirm target journals</div><span class="cl-badge ball">Setup</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m1b')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Complete Intro + Materials & Methods for Research Article</div><span class="cl-badge b1">Res. Article</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m1c')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Literature search for Review 1 (Food System Transformation) — min 60 papers</div><span class="cl-badge b2">Review 1</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m1d')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Write 40% of Review 1 body sections</div><span class="cl-badge b2">Review 1</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m1e')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Literature search for Review 2 (Seaweed) — min 60 papers</div><span class="cl-badge b3">Review 2</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m1f')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Start Book Chapter intro + IoT overview section</div><span class="cl-badge b5">Book Ch.</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m1g')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Contact book editor to confirm chapter scope and word limit</div><span class="cl-badge ball">Admin</span></div></div>
+  </div>
+
+  <!-- Month 2: Jun 22 – Jul 21 -->
+  <div class="checklist hidden" id="tab-month2">
+    <div class="cl-item" onclick="toggleItem(this,'m2a')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Complete Results + Discussion for Research Article</div><span class="cl-badge b1">Res. Article</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m2b')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Finalise figures and tables for Research Article</div><span class="cl-badge b1">Res. Article</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m2c')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Complete full first draft of Review 1</div><span class="cl-badge b2">Review 1</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m2d')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Write 50% of Review 2 (Seaweed biochemical profiling)</div><span class="cl-badge b3">Review 2</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m2e')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Literature search + outline for Review 3 (Circular Bioeconomy)</div><span class="cl-badge b4">Review 3</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m2f')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Write 50% of Book Chapter (IoT applications, case studies)</div><span class="cl-badge b5">Book Ch.</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m2g')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Send Res. Article + Review 1 to colleague for peer review</div><span class="cl-badge ball">Peer Review</span></div></div>
+  </div>
+
+  <!-- Month 3: Jul 22 – Aug 31 -->
+  <div class="checklist hidden" id="tab-month3">
+    <div class="cl-item" onclick="toggleItem(this,'m3a')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Revise Research Article from peer feedback and submit</div><span class="cl-badge b1">Res. Article</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m3b')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Revise Review 1 from peer feedback and submit</div><span class="cl-badge b2">Review 1</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m3c')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Complete and submit Review 2 (Seaweed)</div><span class="cl-badge b3">Review 2</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m3d')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Complete and submit Review 3 (Circular Bioeconomy)</div><span class="cl-badge b4">Review 3</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m3e')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Complete and submit Book Chapter (IoT)</div><span class="cl-badge b5">Book Ch.</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'m3f')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Format all manuscripts to journal guidelines before submission</div><span class="cl-badge ball">Formatting</span></div></div>
+  </div>
+
+  <!-- Submit checklist -->
+  <div class="checklist hidden" id="tab-submit">
+    <div class="cl-item" onclick="toggleItem(this,'su1')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Research Article submitted to journal ✓</div><span class="cl-badge b1">Submit</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su2')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Review Article 1 submitted to journal ✓</div><span class="cl-badge b2">Submit</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su3')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Review Article 2 submitted to journal ✓</div><span class="cl-badge b3">Submit</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su4')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Review Article 3 submitted to journal ✓</div><span class="cl-badge b4">Submit</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su5')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Book Chapter submitted to editor ✓</div><span class="cl-badge b5">Submit</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su6')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">Response-to-reviewers letters prepared (point-by-point)</div><span class="cl-badge ball">Revisions</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su7')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">FNU research profile and CV updated with all submissions</div><span class="cl-badge ball">Admin</span></div></div>
+    <div class="cl-item" onclick="toggleItem(this,'su8')"><div class="cl-check">✓</div><div class="cl-meta"><div class="cl-text">🎉 All 5 deliverables done — celebrate!</div><span class="cl-badge ball">Done!</span></div></div>
+  </div>
+</div>
+
+<!-- ══ PHASES ══ -->
+<div class="screen page-pad" id="screen-phases">
+  <div class="eyebrow">Roadmap</div>
+  <div class="section-title">100-Day Plan</div>
+  <div class="section-sub">May 23 – August 31, 2026 · 3 phases across ~14 weeks</div>
+
+  <div class="phase-card">
+    <div class="phase-badge">01</div>
+    <div class="phase-num">Phase 01 · Weeks 1–4</div>
+    <div class="phase-title-txt">Foundations & First Drafts</div>
+    <div class="phase-dates">May 23 – Jun 21</div>
+    <ul class="phase-tasks">
+      <li>Finalise all 5 outlines + confirm target journals</li>
+      <li>Research Article: Intro + Methods + start Results</li>
+      <li>Review 1: Full literature search + write 40% body</li>
+      <li>Review 2: Full literature search + outline</li>
+      <li>Review 3: Initial literature search</li>
+      <li>Book Chapter: Intro + IoT overview section</li>
+      <li>Target: ~13,000 words total</li>
+    </ul>
+  </div>
+
+  <div class="phase-card">
+    <div class="phase-badge">02</div>
+    <div class="phase-num">Phase 02 · Weeks 5–9</div>
+    <div class="phase-title-txt">Heavy Writing Sprint</div>
+    <div class="phase-dates">Jun 22 – Jul 21</div>
+    <ul class="phase-tasks">
+      <li>Research Article: complete draft → peer review</li>
+      <li>Review 1: complete draft → peer review</li>
+      <li>Review 2: write 50% body sections</li>
+      <li>Review 3: write 40% body sections</li>
+      <li>Book Chapter: write 50% (applications + case studies)</li>
+      <li>Finalise all figures & tables for Res. Article</li>
+      <li>Target: ~18,000 words total</li>
+    </ul>
+  </div>
+
+  <div class="phase-card">
+    <div class="phase-badge">03</div>
+    <div class="phase-num">Phase 03 · Weeks 10–14</div>
+    <div class="phase-title-txt">Completion & Submissions</div>
+    <div class="phase-dates">Jul 22 – Aug 31</div>
+    <ul class="phase-tasks">
+      <li>Research Article: revise + SUBMIT ✓</li>
+      <li>Review 1: revise + SUBMIT ✓</li>
+      <li>Review 2: complete + SUBMIT ✓</li>
+      <li>Review 3: complete + SUBMIT ✓</li>
+      <li>Book Chapter: complete + SUBMIT ✓</li>
+      <li>Handle revision requests from early submissions</li>
+      <li>Update FNU profile and CV</li>
+    </ul>
+  </div>
+
+  <div class="divider">// Word Count Targets</div>
+  <div class="tip-card">
+    <div class="tip-body">
+      <strong style="color:var(--c1)">Research Article</strong> — 5,000–7,000 words (target: 6,000)<br>
+      <strong style="color:var(--c2)">Review 1: Food System Transformation</strong> — 6,000–8,000 words (target: 7,000)<br>
+      <strong style="color:var(--c3)">Review 2: Seaweed</strong> — 6,000–8,000 words (target: 7,000)<br>
+      <strong style="color:var(--c4)">Review 3: Circular Bioeconomy</strong> — 6,000–8,000 words (target: 7,000)<br>
+      <strong style="color:var(--c5)">Book Chapter: IoT</strong> — 8,000–12,000 words (target: 10,000)<br><br>
+      <strong>Total: ~37,000 words in 100 days = 370 words/day minimum.</strong><br>
+      At 600 words/day you finish ahead of schedule with revision buffer.
+    </div>
+  </div>
+
+  <div class="divider">// Weekly Milestones · Month 1</div>
+  <div class="tip-card"><div class="tip-head">Week 1 (May 23–29): Setup</div><div class="tip-body">All 5 outlines done. Reference manager set up. First 500 words: Research Article Methods. Lit search started for Reviews 1 & 2. <strong>Target: 2,000 words.</strong></div></div>
+  <div class="tip-card"><div class="tip-head">Week 2 (May 30–Jun 5): Literature Push</div><div class="tip-body">60 papers sourced for Review 1. Write Review 1 Sections 1–2. Write Research Article Results (begin). <strong>Target: 3,000 words.</strong></div></div>
+  <div class="tip-card"><div class="tip-head">Week 3 (Jun 6–12): Breadth</div><div class="tip-body">Continue Research Article Results. Write Review 1 Section 3. Start Book Chapter IoT overview. Begin Review 2 lit search. <strong>Target: 3,500 words.</strong></div></div>
+  <div class="tip-card"><div class="tip-head">Week 4 (Jun 13–21): Month 1 Close</div><div class="tip-body">Research Article: complete Discussion draft. Review 1 at 40%. Book Chapter intro done. Monthly review of all 5 tracks. <strong>Target: 4,000 words.</strong></div></div>
+</div>
+
+<!-- ══ TIPS ══ -->
+<div class="screen page-pad" id="screen-tips">
+  <div class="eyebrow">Companion Advice</div>
+  <div class="section-title">Tips & Strategy</div>
+  <div class="section-sub">From your academic writing guide</div>
+
+  <div class="divider">// Daily Writing Rhythm</div>
+  <div class="rhythm-card">
+    <div class="rhythm-time">6:00–7:30</div>
+    <div class="rhythm-content">
+      <div class="rhythm-label">Deep Writing Block</div>
+      <div class="rhythm-desc">Your most focused 90 min. Phone off. No email. Pure writing. Target: 500–600 words per session.</div>
+    </div>
+  </div>
+  <div class="rhythm-card">
+    <div class="rhythm-time">12:00–12:30</div>
+    <div class="rhythm-content">
+      <div class="rhythm-label">Literature & Citations</div>
+      <div class="rhythm-desc">Read 1–2 papers, annotate, add references to Mendeley/Zotero. Feed tomorrow's writing pipeline.</div>
+    </div>
+  </div>
+  <div class="rhythm-card">
+    <div class="rhythm-time">Evening</div>
+    <div class="rhythm-content">
+      <div class="rhythm-label">Review & Plan</div>
+      <div class="rhythm-desc">Read what you wrote. Fix obvious errors. Write 3 bullets for tomorrow. 20 minutes max.</div>
+    </div>
+  </div>
+
+  <div class="divider">// Strategic Tips</div>
+
+  <div class="tip-card">
+    <div class="tip-icon">💡</div>
+    <div class="tip-head">Build on What You Already Have</div>
+    <div class="tip-body">Your <strong>Phase 1 hydrothermal data</strong> is the Research Article — don't start from scratch. Your <strong>IoT review article (~6,000 words, 27 refs)</strong> is the Book Chapter backbone. Your <strong>MANA-Pacific food system work</strong> feeds Review 1. You're assembling, not starting.</div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🔄</div>
+    <div class="tip-head">The 5-Paper Rotation Rule</div>
+    <div class="tip-body">With 5 manuscripts, never spend more than <strong>2–3 consecutive days</strong> on one. Rotate strategically: when your Research Article analysis is blocked, switch to a Review introduction. Momentum feeds momentum across papers.</div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🌊</div>
+    <div class="tip-head">The Seaweed Review — Your Strongest New Piece</div>
+    <div class="tip-body">Pacific seaweed (<em>Caulerpa</em> / Nama) is directly tied to your Tupaia grant ecophysiology work. <strong>This review and your lab data reinforce each other.</strong> Prioritise building the literature base for this in Month 1 — it's a unique Pacific contribution that will attract international attention.</div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">📰</div>
+    <div class="tip-head">Journal Targets</div>
+    <div class="tip-body">
+      <strong style="color:var(--c1)">Research Article:</strong> Food Chemistry, LWT, Journal of Food Science<br>
+      <strong style="color:var(--c2)">Review 1 (Food Systems):</strong> Global Food Security, Food Policy, World Development<br>
+      <strong style="color:var(--c3)">Review 2 (Seaweed):</strong> Algal Research, Journal of Applied Phycology, Marine Drugs<br>
+      <strong style="color:var(--c4)">Review 3 (Bioeconomy):</strong> Resources Conservation & Recycling, Bioresource Technology, Journal of Cleaner Production<br>
+      <strong style="color:var(--c5)">Book Chapter:</strong> Springer / Elsevier Smart Food Systems or Precision Agriculture edited volumes
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🛡️</div>
+    <div class="tip-head">When You Miss a Day</div>
+    <div class="tip-body">Missing one day is normal. Missing two is a pattern. Missing three needs a reset. Never try to "catch up" with double output — just <strong>continue at your normal pace</strong>. The buffer you build in good weeks covers the hard days.</div>
+  </div>
+
+  <div class="tip-card">
+    <div class="tip-icon">🎯</div>
+    <div class="tip-head">100-Day Accountability Check</div>
+    <div class="tip-body">Every Sunday, open this app and answer 3 questions:<br>1. How many words did I write this week?<br>2. Which manuscript moved least — and why?<br>3. What is my one priority for next week?<br><br><strong>That 10-minute weekly review is more valuable than any single writing session.</strong></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="gotoScreen('home')">
+    <span class="nav-icon">🏠</span>Home
+  </button>
+  <button class="nav-btn" id="nav-checklist" onclick="gotoScreen('checklist')">
+    <span class="nav-icon">✅</span>Daily
+  </button>
+  <button class="nav-btn" id="nav-phases" onclick="gotoScreen('phases')">
+    <span class="nav-icon">📅</span>Phases
+  </button>
+  <button class="nav-btn" id="nav-tips" onclick="gotoScreen('tips')">
+    <span class="nav-icon">💡</span>Tips
+  </button>
+</nav>
+
+<script>
+// PWA
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+});
+window.addEventListener('appinstalled', () => document.getElementById('install-banner').classList.remove('show'));
+
+// Storage
+const S = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+// Targets (words)
+const TARGETS = { p1: 6000, p2: 7000, p3: 7000, p4: 7000, p5: 10000 };
+const KEYS = ['p1','p2','p3','p4','p5'];
+const SUB_LABELS = { p1:'Res. Article', p2:'Review 1', p3:'Review 2', p4:'Review 3', p5:'Book Chapter' };
+
+let words     = S.get('words2')     || { p1:0, p2:0, p3:0, p4:0, p5:0 };
+let submitted = S.get('submitted2') || { p1:false, p2:false, p3:false, p4:false, p5:false };
+let checkState = S.get('checkState2') || {};
+
+// Nav
+function gotoScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// Words
+function addWords(key) {
+  const inp = document.getElementById('wc-'+key);
+  const val = parseInt(inp.value) || 0;
+  if (val <= 0) return;
+  words[key] = (words[key]||0) + val;
+  S.set('words2', words);
+  inp.value = '';
+  renderWords();
+}
+
+function renderWords() {
+  let total = 0;
+  KEYS.forEach(k => {
+    const w = words[k]||0; total += w;
+    const pct = Math.min(100, Math.round(w / TARGETS[k] * 100));
+    const bar = document.getElementById('prog-'+k);
+    const pctEl = document.getElementById('pct-'+k);
+    const wcEl = document.getElementById('wc-display-'+k);
+    if (bar) bar.style.width = pct+'%';
+    if (pctEl) pctEl.textContent = pct+'%';
+    if (wcEl) wcEl.textContent = w.toLocaleString()+' / '+TARGETS[k].toLocaleString()+' words';
+  });
+  const tw = document.getElementById('total-words');
+  if (tw) tw.textContent = total >= 1000 ? (total/1000).toFixed(1)+'k' : total;
+}
+
+// Submissions
+function toggleSub(key) {
+  submitted[key] = !submitted[key];
+  S.set('submitted2', submitted);
+  renderSubmissions();
+}
+function renderSubmissions() {
+  let count = 0;
+  KEYS.forEach(k => {
+    const btn = document.getElementById('sub-'+k);
+    if (!btn) return;
+    if (submitted[k]) {
+      btn.textContent = SUB_LABELS[k]+' ✓'; btn.classList.add('submitted'); count++;
+    } else {
+      btn.textContent = SUB_LABELS[k]+' ✗'; btn.classList.remove('submitted');
+    }
+  });
+  const pd = document.getElementById('papers-done');
+  if (pd) pd.textContent = count+'/5';
+}
+
+// Days
+function updateDays() {
+  const start = new Date('2026-05-23');
+  const end   = new Date('2026-08-31');
+  const now   = new Date();
+  const days  = Math.max(0, Math.ceil((end - now) / 86400000));
+  const el    = document.getElementById('days-left');
+  if (el) el.textContent = days;
+
+  const dateEl = document.getElementById('today-date');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Dynamic focus message
+  const dayNum = Math.ceil((now - start) / 86400000);
+  let focus = ['Keep Writing!','Stay on schedule. 600 words today.'];
+  if (dayNum <= 7)        focus = ['Week 1: Lock In Your Plan','Finalise all 5 outlines, set up reference manager, write first 300 words on Research Article Methods.'];
+  else if (dayNum <= 14)  focus = ['Week 2: Literature Push','Source 60 papers for Review 1 (Food System Transformation). Write Sections 1–2. Continue Res. Article Results.'];
+  else if (dayNum <= 21)  focus = ['Week 3: Build Breadth','Advance Research Article Results. Write Review 1 Section 3. Begin Book Chapter IoT overview section.'];
+  else if (dayNum <= 30)  focus = ['Week 4: Month 1 Close','Complete Research Article Discussion draft. Reach 40% of Review 1. Monthly review of all 5 tracks.'];
+  else if (dayNum <= 60)  focus = ['Phase 2: Heavy Writing','Complete Research Article + Review 1 drafts. Push to 50% on Review 2, Review 3, and Book Chapter.'];
+  else if (dayNum <= 85)  focus = ['Phase 3: Final Sprint','Submit Research Article and Review 1. Complete and submit Review 2, Review 3, and Book Chapter.'];
+  else                    focus = ['Final Days!','Handle any revision requests. Update FNU profile. You are almost there!'];
+
+  const fEl = document.getElementById('today-focus');
+  const dEl = document.getElementById('today-desc');
+  if (fEl) fEl.textContent = focus[0];
+  if (dEl) dEl.textContent = focus[1];
+}
+
+// Checklist
+function toggleItem(el, id) {
+  el.classList.toggle('done');
+  checkState[id] = el.classList.contains('done');
+  S.set('checkState2', checkState);
+}
+function restoreChecks() {
+  document.querySelectorAll('.cl-item').forEach(el => {
+    const fn = el.getAttribute('onclick');
+    const m = fn && fn.match(/'([^']+)'/g);
+    if (m && m[1]) {
+      const id = m[1].replace(/'/g,'');
+      if (checkState[id]) el.classList.add('done');
+    }
+  });
+}
+function showTab(name, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Init
+updateDays(); renderWords(); renderSubmissions(); restoreChecks();
+setInterval(updateDays, 60000);
+</script>
+</body>
+</html>
